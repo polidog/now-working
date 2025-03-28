@@ -1,0 +1,83 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  createdAt   DateTime      @default(now())
+  memberships Membership[]
+  sessions    WorkingSession[]
+  vacations   Vacation[]
+}
+
+model User {
+  id              String        @id @default(cuid())
+  name            String
+  email           String        @unique
+  slackUserId     String?       @unique
+  chatworkUserId  String?       @unique
+  createdAt       DateTime      @default(now())
+  memberships     Membership[]
+  sessions        WorkingSession[]
+  vacations       Vacation[]
+}
+
+model Membership {
+  id              String        @id @default(cuid())
+  userId          String
+  organizationId  String
+  role            Role          @default(MEMBER)
+  status          MembershipStatus @default(ACTIVE)
+  createdAt       DateTime      @default(now())
+
+  user            User          @relation(fields: [userId], references: [id])
+  organization    Organization  @relation(fields: [organizationId], references: [id])
+
+  @@unique([userId, organizationId])
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
+  LEFT
+}
+
+model WorkingSession {
+  id              String   @id @default(cuid())
+  checkinAt       DateTime
+  checkoutAt      DateTime?
+  note            String?
+  userId          String
+  organizationId  String
+
+  user            User        @relation(fields: [userId], references: [id])
+  organization    Organization @relation(fields: [organizationId], references: [id])
+}
+
+model Vacation {
+  id              String   @id @default(cuid())
+  date            DateTime
+  reason          String?
+  userId          String
+  organizationId  String
+
+  user            User        @relation(fields: [userId], references: [id])
+  organization    Organization @relation(fields: [organizationId], references: [id])
+}
